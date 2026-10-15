@@ -1,0 +1,29 @@
+<mxfile host="app.diagrams.net" modified="2026-10-06T00:00:00.000Z" agent="Copilot" version="24.7.17">
+  <diagram id="migration-approach" name="Migration approach">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="discover" value="Phase 1&#xa;Discover, inventory and route" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="1"><mxGeometry x="50" y="300" width="190" height="70" as="geometry"/></mxCell>
+        <mxCell id="lakebridge" value="Phase 2&#xa;Assess and classify&#xa;Lakebridge assessment status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1"><mxGeometry x="290" y="300" width="210" height="70" as="geometry"/></mxCell>
+        <mxCell id="classify" value="Phase 3&#xa;Target mapping and gap resolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1"><mxGeometry x="550" y="300" width="220" height="70" as="geometry"/></mxCell>
+        <mxCell id="approve" value="Phase 4&#xa;Convert and package&#xa;Transpiler status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1"><mxGeometry x="820" y="300" width="230" height="70" as="geometry"/></mxCell>
+        <mxCell id="package" value="Continuous&#xa;Inventory and evidence status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="1"><mxGeometry x="1080" y="300" width="250" height="70" as="geometry"/></mxCell>
+        <mxCell id="deploy" value="Phase 5&#xa;Non-production deployment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="1"><mxGeometry x="1360" y="285" width="300" height="100" as="geometry"/></mxCell>
+        <mxCell id="validate" value="Phase 6&#xa;Layered validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="1"><mxGeometry x="1360" y="500" width="250" height="70" as="geometry"/></mxCell>
+        <mxCell id="security" value="Phase 6&#xa;Reconcile inventory to target evidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="1"><mxGeometry x="1050" y="500" width="300" height="80" as="geometry"/></mxCell>
+        <mxCell id="cutover" value="Phase 7&#xa;Cut over, close or roll back" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1"><mxGeometry x="690" y="690" width="360" height="80" as="geometry"/></mxCell>
+        <mxCell id="stop" value="Stop, preserve evidence, remediate smallest scope" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1"><mxGeometry x="550" y="520" width="310" height="80" as="geometry"/></mxCell>
+        <mxCell id="m1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="discover" target="lakebridge"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="lakebridge" target="classify"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="classify" target="approve"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="approve" target="package"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="package" target="deploy"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="deploy" target="validate"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m7" value="technical acceptance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="validate" target="security"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m8" value="failure or drift" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="validate" target="stop"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m9" value="renewed approval" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1" edge="1" parent="1" source="stop" target="package"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m10" value="security accepted" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block" edge="1" parent="1" source="security" target="cutover"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

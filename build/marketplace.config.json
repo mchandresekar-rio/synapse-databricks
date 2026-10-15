@@ -1,0 +1,12 @@
+{
+  "name": "factory-skills-collection",
+  "metadata": {
+    "description": "Private Azure Databricks and Microsoft Fabric skills collection"
+  },
+  "owner": {
+    "name": "namratam_microsoft"
+  },
+  "pluginOrder": [
+    "databricks-skills"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "databricks-skills",
+  "description": "Synapse to Azure Databricks migration skills",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/namratam_microsoft/skills-for-databricks",
+  "keywords": [
+    "azure-databricks",
+    "synapse",
+    "migration",
+    "unity-catalog",
+    "asset-bundles",
+    "pipeline-migration"
+  ],
+  "skills": [
+    "./skills/synapse-to-azure-databricks",
+    "./skills/pipelines-to-azure-databricks-workflows"
+  ],
+  "agents": [],
+  "mcpServers": {}
+}

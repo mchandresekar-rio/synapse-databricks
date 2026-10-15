@@ -1,0 +1,157 @@
+name: pipelines-to-azure-databricks-workflows-full-eval
+
+description: Multi-turn offline review of ADF and Synapse pipeline migration to Azure Databricks Workflows.
+
+tags:
+  type: fulleval
+  skill: pipelines-to-azure-databricks-workflows
+  scope: offline
+
+defaults:
+  runs: 1
+  timeout: "20m"
+  executor: copilot-sdk
+  model: claude-sonnet-4.6
+
+scoring:
+  threshold: 1.0
+
+stimuli:
+  - name: "Convert mixed ADF and Synapse orchestration safely"
+    l1l2_exempt: "Offline multi-turn design review performs no source or target action."
+    tags:
+      type: fulleval
+      scope: offline
+      skill: pipelines-to-azure-databricks-workflows
+    constraints:
+      max_turns: 20
+      max_tokens: 500000
+      max_duration: 12m
+      reject_skills:
+        - synapse-to-azure-databricks
+    turns:
+      - |
+        Work offline. Define both intake modes for a mixed ADF and Synapse
+        estate: approved live read-only discovery and supplied export intake.
+        Cover authentication audiences, pagination, full-definition retrieval,
+        immutable/redacted raw snapshots, export formats, hash/count/reference
+        reconciliation, and live-versus-export drift. Then inventory pipelines,
+        datasets, linked services, integration runtimes, triggers, parameters,
+        variables, child pipelines, retries, timeouts, and failure dependencies.
+        Define stable identity, completeness gates, and the native/rewrite/
+        retain/hybrid/blocker/retire classification. Define the Excel inventory
+        and JSON manifest, including sheets, lifecycle states, formulas,
+        history, and update points. Assume source and target access and
+        provisioned Unity Catalog; do not introduce a prerequisite phase or
+        platform provisioning.
+      - |
+        Design the target for notebook, SQL, ExecutePipeline, IfCondition, and
+        ForEach activities. Copy uses SHIR and SSIS is present. Define the
+        hybrid ownership boundary, parameters/task values, identity, secrets,
+        networking, Asset Bundle package, and approvals. Prevent circular
+        orchestration and duplicate retries.
+      - |
+        Define non-production validation, including success/failure/skip paths,
+        concurrency, retries, cancellation, idempotency, watermark, backfill,
+        duplicate prevention, partial restart, lineage, performance, and cost.
+        Finish with a guarded schedule cutover and rollback that never leaves
+        source and target schedules active together. Preserve the exact source
+        pipeline and trigger display names by default, represent every source
+        trigger as a separately traceable paused Databricks schedule before
+        cutover, and do not add developer IDs or environment suffixes unless
+        explicitly approved. Make post-deployment reconciliation of verified
+        target job/scheduler IDs, exact names, URLs, schedule states, package
+        hash, approvals, attempts, timestamps, and evidence into both the Excel
+        workbook and JSON manifest a deployment completion gate.
+        Treat the existing Synapse-to-Databricks table migration workbook and
+        machine-readable manifest as mandatory hashed authoritative inputs.
+        Require its Migration Status, Target Objects, and Dependencies sheets;
+        add pipeline sheets to that same workbook. Use Lakebridge Assessment
+        Status, Lakebridge Transpiler Status, and Migration Inventory Status,
+        and only reconciled Delta/view/Bronze target records, to resolve
+        orchestration dependencies; never infer migrated objects from names.
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - pipelines-to-azure-databricks-workflows
+          disallowed:
+      - type: completed
+      - type: transcript-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace|Azure Arc|workspace provisioning|Unity Catalog provisioning|identity onboarding|customer VDI"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*ADF)(?=.*Synapse)(?=.*dataset)(?=.*linked service)(?=.*trigger)(?=.*hash)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*(ARM|management.azure.com))(?=.*dev.azuresynapse.net)(?=.*pagination)(?=.*(full|individual).{0,40}definition)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*(snapshot|raw))(?=.*redact)(?=.*export)(?=.*drift)(?=.*authoritative)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*native)(?=.*rewrite)(?=.*retain)(?=.*hybrid)(?=.*blocker)(?=.*retire)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*(Excel|workbook))(?=.*Activities)(?=.*Dependencies)(?=.*Summary)(?=.*formula)(?=.*JSON)(?=.*manifest)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*Migration Status)(?=.*Target Objects)(?=.*Dependencies)(?=.*Pipelines)(?=.*Activities)(?=.*Pipeline Dependencies)(?=.*Pipeline Summary)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(?=.*lifecycle)(?=.*package hash)(?=.*approval)(?=.*(failed attempt|history))(?=.*last.updated)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*Copy)(?=.*SHIR)(?=.*SSIS)(?=.*(retain|hybrid))(?=.*Asset Bundle)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*parameter)(?=.*task value)(?=.*identity)(?=.*secret)(?=.*network)(?=.*approval)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*circular)(?=.*retry)(?=.*(single|one).{0,30}(owner|ownership))"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(?=.*failure)(?=.*skip)(?=.*concurr)(?=.*idempoten)(?=.*watermark)(?=.*backfill)(?=.*partial)"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(?=.*schedule)(?=.*cutover)(?=.*rollback)(?=.*(not|never).{0,50}(both|duplicate))"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(?=.*exact.{0,40}(pipeline|trigger).{0,40}name)(?=.*paused)(?=.*separate)(?=.*(developer|user|suffix|prefix))"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(?=.*(Excel|workbook))(?=.*JSON.{0,20}manifest)(?=.*(job|scheduler).{0,20}ID)(?=.*URL)(?=.*package hash)(?=.*(attempt|timestamp))(?=.*reconcil)"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(?=.*upstream)(?=.*workbook)(?=.*manifest)(?=.*hash)(?=.*Lakebridge Assessment Status)(?=.*Lakebridge Transpiler Status)(?=.*Migration Inventory Status)(?=.*reconciled)(?=.*(not|never).{0,30}(infer|name))"
+      - type: token-budget
+        config:
+          max: 500000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "12m"
+      - type: turn-count
+        config:
+          max: 20
+      - type: tool-call-count
+        config:
+          max: 35

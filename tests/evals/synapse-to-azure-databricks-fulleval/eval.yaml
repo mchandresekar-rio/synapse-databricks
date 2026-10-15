@@ -1,0 +1,497 @@
+name: synapse-to-azure-databricks-full-eval
+
+description: Multi-turn offline review of a Synapse to Azure Databricks migration plan.
+
+tags:
+  type: fulleval
+  skill: synapse-to-azure-databricks
+  scope: offline
+
+defaults:
+  runs: 1
+  timeout: "20m"
+  executor: copilot-sdk
+  model: claude-sonnet-4.6
+
+scoring:
+  threshold: 1.0
+
+stimuli:
+  - name: "Track Lakebridge and inventory status through phases"
+    l1l2_exempt: "Offline phase planning creates no files, installs no software, and makes no cloud calls."
+    tags:
+      type: fulleval
+      scope: offline
+      skill: synapse-to-azure-databricks
+      mode: phased-inventory
+    constraints:
+      max_turns: 24
+      max_tokens: 500000
+      max_duration: 10m
+      reject_skills:
+        - pipelines-to-azure-databricks-workflows
+    turns:
+      - |
+        Assume working Synapse and Databricks access and provisioned Unity Catalog.
+        Lakebridge is missing. Begin with Phase 1 discovery and inventory rather
+        than access readiness. Explain the inventory artifacts and the separate
+        Lakebridge Assessment Status, Lakebridge Transpiler Status, and Migration
+        Inventory Status for every object. Do not run commands or create files.
+      - |
+        Continue to Phase 2 assessment using governed fallback. Show how assessment
+        status changes without implying transpiler support and how the inventory is
+        reconciled. Do not install anything or perform assessment.
+      - |
+        Explain Phase 4 conversion when the Lakebridge transpiler is unsupported for
+        Serverless SQL. Record the transpiler and fallback statuses, preserve the
+        assessment evidence, and name the operational approvals still required.
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - synapse-to-azure-databricks
+          disallowed:
+            - pipelines-to-azure-databricks-workflows
+      - type: completed
+      - type: transcript-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace|installed successfully|Azure Arc|customer VDI|identity onboarding|workspace provisioning|Unity Catalog provisioning"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Phase\\s*1.*(discover|inventory).*(workbook|\\.xlsx).*(manifest|\\.json)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Lakebridge Assessment Status.*Lakebridge Transpiler Status.*Migration Inventory Status"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(Lakebridge.*missing|not installed).*(does not|not).*(block|stop).*(inventory|Phase\\s*1)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)Phase\\s*2.*(assessment|assess).*(fallback).*(assessment support does not imply|separate).*(transpiler|conversion)"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)Phase\\s*4.*(transpiler).*(unsupported).*(fallback).*(preserve|retain).*(assessment)"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(target mutation|data movement|costly compute|deployment|cutover).*(approval|approve)"
+      - type: token-budget
+        config:
+          max: 500000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "10m"
+      - type: turn-count
+        config:
+          max: 24
+      - type: tool-call-count
+        config:
+          max: 35
+
+  - name: "Review a Synapse to Databricks migration across five phases"
+    l1l2_exempt: "Offline plan review creates no files or cloud resources; deterministic output graders cover phase invariants."
+    tags:
+      type: fulleval
+      scope: offline
+      skill: synapse-to-azure-databricks
+    constraints:
+      max_turns: 35
+      max_tokens: 950000
+      max_duration: 15m
+      reject_skills:
+        - pipelines-to-azure-databricks-workflows
+    turns:
+      - |
+        We are planning an offline migration from Azure Synapse to Azure Databricks. The source
+        has two Spark pools, PySpark and Scala notebooks, Spark Job Definitions, linked services,
+        ADLS Gen2 paths, and pool libraries. Describe the inventory and compatibility assessment.
+        Include the exact Phase 1 Excel inventory and companion manifest paths, the reusable
+        creation script, required workbook worksheets, and the gate that blocks later phases
+        when the populated artifacts are missing. Do not connect to Azure, run commands, create
+        files, or deploy resources.
+      - |
+        Now map the estate to Azure Databricks. Cover workspace and Unity Catalog boundaries,
+        catalogs and schemas, storage credentials and external locations, compute or serverless,
+        Jobs/Workflows, secrets, networking, and Databricks Asset Bundles. Identify decisions that
+        require approval before conversion.
+      - |
+        Explain how conversion preserves notebook languages, parameters, dependencies, libraries,
+        and source traceability. Be explicit that mssparkutils calls require behavioral mapping and
+        that Synapse SQL and pipeline constructs are not automatically compatible.
+      - |
+        Define a migration manifest and safe non-production deployment process. Include stable
+        source identities, hashes, statuses, bounded retries, least privilege, collision checks,
+        and a prohibition on source mutation and unapproved data copying.
+      - |
+        Close with layered validation, cutover, rollback, and a failure report. Distinguish syntax,
+        startup, permissions/data access, behavioral, performance, orchestration, and consumer
+        validation. Do not perform any action.
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - synapse-to-azure-databricks
+          disallowed:
+      - type: completed
+      - type: transcript-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)inventory.*compatib|compatib.*inventory"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)synapse-to-databricks-migration-inventory\\.xlsx.*synapse-to-databricks-migration-inventory\\.manifest\\.json.*create_migration_inventory\\.py"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Migration Status.*Target Objects.*Dependencies.*(blocked|incomplete|cannot|must not).*(missing|absent|empty|populated)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)Unity Catalog.*external location.*Asset Bundle|Asset Bundle.*Unity Catalog"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)mssparkutils.*behavio|behavio.*mssparkutils"
+      - type: output-matches
+        turn: 3
+        config:
+          pattern: "(?is)manifest.*hash.*least privilege|least privilege.*manifest"
+      - type: output-matches
+        turn: 4
+        config:
+          pattern: "(?is)validation.*rollback|rollback.*validation"
+      - type: token-budget
+        config:
+          max: 950000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "15m"
+      - type: turn-count
+        config:
+          max: 35
+      - type: tool-call-count
+        config:
+          max: 60
+
+  - name: "Review staged Bronze modernisation across four gated stages"
+    l1l2_exempt: "Offline multi-turn scenario review creates no files or cloud resources and performs no data movement."
+    tags:
+      type: fulleval
+      scope: offline
+      skill: synapse-to-azure-databricks
+      mode: staged-bronze
+    constraints:
+      max_turns: 30
+      max_tokens: 900000
+      max_duration: 15m
+      reject_skills:
+    turns:
+      - |
+        Review stage 1 of a staged Bronze modernisation offline. Start with the
+        common CAF Phase 1 workbook and manifest, status fields, then explain
+        read-only registration of existing Synapse/ADF-owned Parquet Bronze in
+        Unity Catalog with no data copy or writer change.
+      - |
+        Continue to stage 2 only after stage 1 PASS and progression approval.
+        Map thin views, complex transformations, and persisted facts and
+        dimensions. Include paused schedules and deterministic reconciliation.
+      - |
+        Review stage 3. Distinguish eligible external Delta from external
+        Parquet, require current-product verification, separate data-movement
+        and writer-transfer approvals, and define rollback and retention.
+      - |
+        Review stage 4 ADF ingestion replacement. Preserve watermark,
+        idempotency, restart, duplicate prevention, connectivity dispositions,
+        separate test targets, writer ownership transfer, cutover, and delayed
+        decommissioning. Do not perform any action.
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - synapse-to-azure-databricks
+            - pipelines-to-azure-databricks-workflows
+          disallowed:
+      - type: completed
+      - type: transcript-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Phase\\s*1.*(workbook|\\.xlsx).*(manifest|\\.json).*(Lakebridge Assessment Status).*(Lakebridge Transpiler Status).*(Migration Inventory Status)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(synapse-owned|adf-owned).*(register-existing|read-only|no.copy).*(no.*writer|only writer)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(PASS).*(approval).*(SQL view).*(Lakeflow|Databricks Job).*(managed Delta).*(paused)"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(external Delta).*(SET MANAGED).*(Parquet).*(CTAS|copy|rewrite|data movement).*(rollback|retention)"
+      - type: output-matches
+        turn: 3
+        config:
+          pattern: "(?is)(watermark).*(idempot).*(restart).*(duplicate).*(cutover-pending).*(databricks-owned)"
+      - type: output-matches
+        turn: 3
+        config:
+          pattern: "(?is)(separate.*test target|test targets).*(ADF).*(decommission).*(retention|rollback)"
+      - type: token-budget
+        config:
+          max: 900000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "15m"
+      - type: turn-count
+        config:
+          max: 30
+      - type: tool-call-count
+        config:
+          max: 55
+
+  - name: "Review Dedicated SQL Pool routing and guarded data migration"
+    l1l2_exempt: "Offline dedicated-pool review creates no files or cloud resources; deterministic graders cover routing and data-movement controls."
+    tags:
+      type: fulleval
+      scope: offline
+      skill: synapse-to-azure-databricks
+      mode: dedicated-sql-pool
+    constraints:
+      max_turns: 30
+      max_tokens: 650000
+      max_duration: 12m
+      reject_skills:
+        - pipelines-to-azure-databricks-workflows
+    turns:
+      - |
+        This is a Synapse Dedicated SQL Pool, not Serverless SQL. Inventory distributions,
+        partitions, clustered columnstore indexes, materialized views, procedures, workload
+        groups, resource classes, 15 TB of tables, daily loads, and BI consumers. Explain the
+        Lakebridge capability gate and target mapping without connecting to Azure or moving data.
+      - |
+        Define the approvals and manifest needed for an initial load, incremental synchronization,
+        source-of-truth transition, non-production deployment, data reconciliation, cutover, and
+        rollback. Do not execute anything.
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - synapse-to-azure-databricks
+          disallowed:
+            - pipelines-to-azure-databricks-workflows
+      - type: completed
+      - type: transcript-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(distribution|columnstore).*(managed Delta|liquid cluster|partition)|(managed Delta|liquid cluster|partition).*(distribution|columnstore)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Lakebridge.*(capability|pilot|supported).*(Dedicated|dedicated)|(Dedicated|dedicated).*Lakebridge.*(capability|pilot|supported)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(approval|approve).*(initial load|incremental|synchron).*(source.of.truth|cutover)|(source.of.truth|cutover).*(approval|approve)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)manifest.*(row count|aggregate|hash|reconcil).*(rollback|cutover)|(rollback|cutover).*manifest"
+      - type: token-budget
+        config:
+          max: 650000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "12m"
+      - type: turn-count
+        config:
+          max: 30
+      - type: tool-call-count
+        config:
+          max: 50
+
+  - name: "Review Synapse serverless SQL to Databricks across five phases"
+    l1l2_exempt: "Offline serverless SQL design review creates no files or cloud resources; turn-scoped deterministic graders cover migration invariants."
+    tags:
+      type: fulleval
+      scope: offline
+      skill: synapse-to-azure-databricks
+      mode: serverless-sql
+    constraints:
+      max_turns: 35
+      max_tokens: 950000
+      max_duration: 15m
+      reject_skills:
+        - pipelines-to-azure-databricks-workflows
+    turns:
+      - |
+        We are reviewing a Synapse serverless SQL pool migration offline. Inventory a database
+        containing schemas, native external Parquet and CSV tables, external data sources and file
+        formats, OPENROWSET views, CETAS outputs, inline TVFs, procedures, statistics, users,
+        grants, and TDS consumers. It also has a metadata-driven post-staging pipeline that reads
+        transformation views, applies persisted/aggregated control flags, and writes Parquet facts
+        and dimensions for serving views. Existing source ingestion into ADLS remains out of scope.
+        Explain why the SQL layer is metadata over external files and how to
+        extract definitions read-only. Lakebridge is available: use it as option 1 where the
+        installed release explicitly supports serverless assessment, then define option 2 for
+        unsupported, partial, or unavailable capabilities. Reconcile expected scope, supplied
+        artifacts, and deployed state, and define the mapping-gap conversion gate. Define the
+        enriched Lakebridge Excel inventory deliverable and its Migration Status worksheet,
+        including fallback-only objects absent from the Analyzer report, plus a Target Objects
+        worksheet backed by actual Databricks deployment and validation evidence. Do not connect
+        to Azure, query data, run commands, or write files.
+      - |
+        Map that inventory to Azure Databricks. Cover source database-to-catalog/schema choices,
+        Unity Catalog storage credentials and external locations, external versus managed tables,
+        a Databricks SQL Warehouse, identity/networking, and the approval decisions required to
+        keep source ingestion no-copy. Separately map the in-scope fact/dimension producer to SQL
+        views, materialized views, a Lakeflow Declarative Pipeline, or a Databricks Job based on
+        refresh state and orchestration needs, with target-owned managed Delta outputs.
+      - |
+        Explain offline conversion of external tables, OPENROWSET, views, CETAS, inline TVFs, and
+        procedures. Cover explicit schemas, path/glob differences, T-SQL dialect and type/collation
+        behavior, read_files versus named tables, and why CETAS or procedure execution cannot be
+        translated or run automatically. Distinguish Lakebridge assessment support from its
+        currently documented dedicated-pool transpilation scope, and route unsupported serverless
+        conversion through the governed fallback. Explain how control-driven fact/dimension
+        production preserves keys, watermarks, idempotency, retries, and restart behavior.
+      - |
+        Define the serverless SQL migration manifest and non-production deployment controls.
+        Include stable source identity, definition and artifact hashes, dependencies, data-movement
+        disposition, target external location and SQL Warehouse, least privilege, collision checks,
+        Declarative Automation Bundle validation, bounded retries, producer pipeline identity,
+        schedule, refresh mode, control dependencies, persisted outputs, and writer ownership.
+      - |
+        Close with structural, SQL, storage, schema, behavioral, security, TDS consumer,
+        performance, and operational validation. Explain controlled cutover and rollback while
+        preserving the Synapse endpoint and shared ADLS files. Include pipeline replay, watermark,
+        duplicate prevention, late-arriving data, fact grain, dimension keys, and partial-failure
+        restart validation. Do not perform any action.
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - synapse-to-azure-databricks
+          disallowed:
+            - pipelines-to-azure-databricks-workflows
+      - type: completed
+      - type: transcript-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(metadata.*(?:external )?files|(?:external )?files.*metadata).*(read.only|SqlPackage|export)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Lakebridge.*(Profiler|Analyzer).*(option 2|fallback)|(option 2|fallback).*(Profiler|Analyzer).*Lakebridge"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)(expected.*artifact.*deployed|artifact.*deployed.*expected).*(mapping.gap|blocker)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Lakebridge.*(Excel|workbook).*(Migration Status).*(fallback|not reported|missing).*(full|governed)|(Migration Status).*(Lakebridge).*(fallback|not reported|missing)"
+      - type: output-matches
+        turn: 0
+        config:
+          pattern: "(?is)Target Objects.*(Databricks|catalog).*(deployment|statement).*(validation|row count)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)Unity Catalog.*storage credential.*external location.*SQL Warehouse"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(no.copy|without copying|register.*existing).*(approval|approve)|(approval|approve).*(no.copy|without copying|register.*existing)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*(?:(?:source|upstream).*ingestion))(?=.*(?:retain|out of scope))(?=.*(?:Lakeflow|materialized view|Databricks Job))(?=.*managed Delta)"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*SQL views?)(?=.*(?:thin|logical|non.materialized|serving))"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*materialized view)(?=.*(?:eligible|deterministic|refresh|cost))"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*Lakeflow)(?=.*(?:declarative|state|quality|expectation))"
+      - type: output-matches
+        turn: 1
+        config:
+          pattern: "(?is)(?=.*(?:Databricks Job|Workflow))(?=.*(?:imperative|mixed.activity|orchestrat))"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)OPENROWSET.*(read_files|external table).*(CETAS|procedure)"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)Lakebridge.*transpil.*dedicated.*fallback|fallback.*Lakebridge.*transpil.*dedicated"
+      - type: output-matches
+        turn: 2
+        config:
+          pattern: "(?is)(assessment.*does not.*conversion|assessment.*separate.*conversion|conversion.*gate).*(pilot|capability|transpil)"
+      - type: output-matches
+        turn: 3
+        config:
+          pattern: "(?is)manifest.*hash.*data.movement.*least privilege.*collision"
+      - type: output-matches
+        turn: 3
+        config:
+          pattern: "(?is)(producer|pipeline).*(schedule|refresh).*(control|watermark).*(writer|owner)"
+      - type: output-matches
+        turn: 4
+        config:
+          pattern: "(?is)validation.*cutover.*rollback|rollback.*cutover.*validation"
+      - type: output-matches
+        turn: 4
+        config:
+          pattern: "(?is)(replay|idempot).*(watermark).*(duplicate|late.arriving).*(fact|dimension|restart)"
+      - type: token-budget
+        config:
+          max: 950000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "15m"
+      - type: turn-count
+        config:
+          max: 35
+      - type: tool-call-count
+        config:
+          max: 60

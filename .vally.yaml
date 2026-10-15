@@ -1,0 +1,7 @@
+suites:
+  smoke:
+    filter:
+      tier: smoke
+  fulleval:
+    filter:
+      tier: fulleval

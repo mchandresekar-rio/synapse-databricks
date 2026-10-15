@@ -1,0 +1,30 @@
+{
+  "name": "@mchandresekar-rio/synapse-to-databricks-skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private AI coding-assistant skills for Azure Synapse to Azure Databricks migration and pipeline conversion.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mchandresekar-rio/synapse-databricks.git"
+  },
+  "keywords": [
+    "azure-databricks",
+    "azure-synapse",
+    "synapse",
+    "databricks",
+    "data-migration",
+    "migration",
+    "pipeline-migration",
+    "adf-to-databricks",
+    "synapse-to-databricks",
+    "copilot-skills",
+    "ai-skills",
+    "azure-data-platform"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "test": "python3 -m pytest -q tests",
+    "check:independence": "python3 scripts/check_independence.py",
+    "build:plugins": "python3 build/build_plugins.py --check"
+  }
+}

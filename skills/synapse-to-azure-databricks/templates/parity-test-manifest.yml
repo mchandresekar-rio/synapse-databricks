@@ -1,0 +1,98 @@
+version: 1
+migration_scope: ""
+mapping_report_revision: ""
+
+source:
+  endpoint: ""
+  database: ""
+  allowed_schemas: []
+  authentication: entra
+
+target:
+  workspace_host: ""
+  warehouse_id: ""
+  catalog: ""
+  schema: ""
+  allowed_schemas: []
+  authentication: oauth
+
+pipeline:
+  retained_ingestion_boundary: ""
+  source_pipeline: ""
+  target_pipeline: ""
+  schedule: ""
+  refresh_mode: ""
+  watermark_column_or_token: ""
+  writer_owner: ""
+  control_dependencies: []
+  source_inputs: []
+  persisted_outputs: []
+
+snapshot:
+  revision_or_watermark: ""
+  timezone: UTC
+
+evidence:
+  classification: ""
+  allow_diagnostic_rows: false
+  max_diagnostic_rows: 0
+
+defaults:
+  timeout_seconds: 600
+  timestamp_precision: microsecond
+  decimal_absolute_tolerance: 0
+  decimal_relative_tolerance: 0
+  case_sensitive_strings: true
+  trim_trailing_spaces: false
+  null_equals_empty_string: false
+
+tests:
+  - id: example_metadata
+    enabled: false
+    required: true
+    mode: metadata
+    source_object: database.schema.object
+    target_object: catalog.schema.object
+    source_sql: "SELECT * FROM database.schema.object WHERE 1 = 0"
+    target_sql: "SELECT * FROM catalog.schema.object WHERE 1 = 0"
+    parameters: {}
+    key_columns: []
+    order_columns: []
+    partition_columns: []
+    compare_columns: []
+    exclude_columns: []
+    decimal_scales: {}
+    decimal_absolute_tolerances: {}
+    decimal_relative_tolerances: {}
+    timestamp_columns: {}
+    expected_difference: null
+    owner: ""
+  - id: example_fact_dimension_pipeline
+    enabled: false
+    required: true
+    mode: pipeline_contract
+    source_object: database.osa_persisted.fact_or_dimension
+    target_object: catalog.schema.fact_or_dimension
+    source_sql: ""
+    target_sql: ""
+    parameters: {}
+    key_columns: []
+    order_columns: []
+    partition_columns: []
+    compare_columns: []
+    exclude_columns: []
+    decimal_scales: {}
+    decimal_absolute_tolerances: {}
+    decimal_relative_tolerances: {}
+    timestamp_columns: {}
+    pipeline_checks:
+      - idempotent_replay
+      - watermark_advancement
+      - partial_failure_restart
+      - duplicate_prevention
+      - fact_grain
+      - dimension_referential_integrity
+      - late_arriving_data
+      - serving_view_result
+    expected_difference: null
+    owner: ""

@@ -1,0 +1,229 @@
+name: pipelines-to-azure-databricks-workflows-smoke
+
+description: Routing and safety checks for ADF and Synapse pipeline migration to Azure Databricks Workflows.
+
+tags:
+  type: integration
+  skill: pipelines-to-azure-databricks-workflows
+  scope: offline
+
+defaults:
+  runs: 1
+  timeout: "10m"
+  executor: copilot-sdk
+  model: claude-sonnet-4.6
+
+scoring:
+  threshold: 1.0
+
+stimuli:
+  - name: "Design a hybrid ADF to Databricks workflow"
+    l1l2_exempt: "Offline exported-JSON review creates no Azure or Databricks resource."
+    prompt: |
+      Assess this complete synthetic ADF pipeline manifest for migration to
+      Azure Databricks Workflows. Treat the listed constructs as the complete
+      assessment input; do not search for files or ask for JSON. It contains
+      Copy activities using a self-hosted integration runtime, Databricks
+      notebooks, ExecutePipeline, IfCondition, ForEach, parameters, retries,
+      timeouts, success and failure dependencies, concurrency 4, and a daily
+      trigger named `Daily OSA_Load`. The source pipeline is named
+      `OSA_ALL_Pipelines_in_sequence`. Work offline and do not deploy.
+
+      Classify every activity disposition, choose native or hybrid
+      orchestration, describe an immutable Asset Bundle package, and define
+      behavioral validation and guarded schedule cutover. Explicitly prevent
+      duplicate schedules and circular retry ownership. Define the Excel
+      inventory workbook and machine-readable manifest used to track progress.
+      State how deployment preserves the exact pipeline and trigger display
+      names and represents the source schedule in a paused state before
+      cutover, without adding a developer identity or environment suffix.
+      State how verified deployed job and scheduler IDs, URLs, names, schedule
+      states, package hash, timestamp, approval, attempts, and evidence are
+      reconciled back into both inventory artifacts before reporting success.
+      An upstream Synapse-to-Databricks table migration inventory already
+      exists with Migration Status, Target Objects, and Dependencies sheets.
+      Explain how its workbook and machine-readable manifest become mandatory
+      hashed inputs used to prove Delta/view/Bronze mappings, rather than
+      inferring mappings from object names. Add pipeline sheets to that same
+      workbook. Carry Lakebridge Assessment Status, Lakebridge Transpiler
+      Status, and Migration Inventory Status into dependency decisions, and
+      use only reconciled target mappings. Assume access and Unity Catalog are
+      ready; do not discuss Azure Arc or platform provisioning.
+    tags:
+      type: integration
+      tier: smoke
+      scope: offline
+      skill: pipelines-to-azure-databricks-workflows
+    constraints:
+      max_turns: 15
+      max_tokens: 350000
+      max_duration: 8m
+      reject_skills:
+        - synapse-to-azure-databricks
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - pipelines-to-azure-databricks-workflows
+          disallowed:
+      - type: completed
+      - type: output-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace|Azure Arc|workspace provisioning|Unity Catalog provisioning|identity onboarding|customer VDI"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*Copy)(?=.*(retain|external|hybrid))(?=.*(self.hosted|SHIR))"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*(notebook|Databricks task))(?=.*ExecutePipeline)(?=.*(run_job_task|child))(?=.*ForEach)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*success)(?=.*failure)(?=.*retry)(?=.*timeout)(?=.*parameter)(?=.*concurr)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*Asset Bundle)(?=.*source.{0,20}(ID|hash))(?=.*rollback)(?=.*approval)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*schedule)(?=.*(duplicate|both))(?=.*cutover)(?=.*(disable|guard))"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*OSA_ALL_Pipelines_in_sequence)(?=.*Daily OSA_Load)(?=.*exact)(?=.*paused)(?=.*(no|without).{0,40}(personal|developer|user|suffix|prefix))"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*(Excel|workbook))(?=.*JSON.{0,20}manifest)(?=.*job.{0,20}ID)(?=.*schedule.{0,20}ID)(?=.*URL)(?=.*package hash)(?=.*(attempt|timestamp))(?=.*reconcil)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*upstream)(?=.*workbook)(?=.*manifest)(?=.*hash)(?=.*Migration Status)(?=.*Target Objects)(?=.*Dependencies)(?=.*(Delta|Bronze|view))(?=.*(not|never).{0,30}(infer|name))"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*same workbook|existing workbook|authoritative workbook)(?=.*Pipelines)(?=.*Activities)(?=.*Pipeline Dependencies)(?=.*Runs and validation)(?=.*Pipeline Summary)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*Lakebridge Assessment Status)(?=.*Lakebridge Transpiler Status)(?=.*Migration Inventory Status)(?=.*reconciled)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*JSON)(?=.*manifest)(?=.*(stable ID|source ID))(?=.*hash)(?=.*(lifecycle|status))(?=.*(failed attempt|history))"
+      - type: token-budget
+        config:
+          max: 350000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "8m"
+      - type: turn-count
+        config:
+          max: 15
+      - type: tool-call-count
+        config:
+          max: 30
+
+  - name: "Route Synapse pipeline-only migration"
+    l1l2_exempt: "Offline routing guidance creates no target artifact."
+    prompt: |
+      I only need to migrate exported Azure Synapse pipelines to Azure
+      Databricks Jobs. Some activities are Synapse notebooks and SQL scripts;
+      Copy and SSIS activities may need to stay in Synapse. Do not assess Spark
+      pools or deploy anything.
+    tags:
+      type: integration
+      tier: smoke
+      scope: offline
+      skill: pipelines-to-azure-databricks-workflows
+    constraints:
+      max_turns: 15
+      max_tokens: 350000
+      max_duration: 8m
+      reject_skills:
+        - synapse-to-azure-databricks
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - pipelines-to-azure-databricks-workflows
+          disallowed:
+      - type: completed
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*Synapse)(?=.*(notebook|SQL))(?=.*(Copy|SSIS))(?=.*(retain|hybrid|block))"
+      - type: token-budget
+        config:
+          max: 350000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "8m"
+      - type: turn-count
+        config:
+          max: 15
+      - type: tool-call-count
+        config:
+          max: 30
+
+  - name: "Plan live ADF and Synapse inventory discovery"
+    l1l2_exempt: "Offline planning for future read-only discovery performs no Azure API call."
+    prompt: |
+      Define how this skill should create its inventory when I provide either
+      an ADF factory name, a Synapse workspace name, or an offline export.
+      Explain the read-only live discovery scopes, authentication audiences,
+      pagination and full-definition retrieval, secret redaction, immutable raw
+      snapshots, export formats, reference reconciliation, and live-versus-
+      export drift handling. Include the Excel workbook and JSON manifest
+      outputs. Do not connect to Azure now.
+    tags:
+      type: integration
+      tier: smoke
+      scope: offline
+      skill: pipelines-to-azure-databricks-workflows
+    constraints:
+      max_turns: 15
+      max_tokens: 350000
+      max_duration: 8m
+      reject_skills:
+        - synapse-to-azure-databricks
+    graders:
+      - type: skill-invocation
+        config:
+          required:
+            - pipelines-to-azure-databricks-workflows
+          disallowed:
+      - type: completed
+      - type: output-not-matches
+        config:
+          pattern: "(?i)fatal error|unhandled exception|stack trace"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*ADF)(?=.*(ARM|management.azure.com))(?=.*Synapse)(?=.*dev.azuresynapse.net)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*(list|enumerate))(?=.*pagination|continuation)(?=.*(GET|full).{0,30}definition)(?=.*count)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*(GET|read.only))(?=.*(no|never).{0,50}(publish|create|update|delete|trigger|run))"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*(redact|secret))(?=.*(snapshot|raw))(?=.*SHA.256|hash)(?=.*(token|connection string|password|key))"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*(ARM template|Git.mode|export))(?=.*(dataset|linked service))(?=.*missing)(?=.*reference)"
+      - type: output-matches
+        config:
+          pattern: "(?is)(?=.*live)(?=.*export)(?=.*drift)(?=.*authoritative)(?=.*(Excel|workbook))(?=.*JSON)(?=.*manifest)"
+      - type: token-budget
+        config:
+          max: 350000
+      - type: error-count
+        config:
+          max: 0
+      - type: wall-time
+        config:
+          max: "8m"
+      - type: turn-count
+        config:
+          max: 15
+      - type: tool-call-count
+        config:
+          max: 30
